@@ -14,21 +14,16 @@ empaquetado en **Docker**.
 
 > Aplicación desplegada y funcionando. Credenciales de prueba más abajo.
 
-| Servicio       | URL                                   |
-| -------------- | ------------------------------------- |
-| **Frontend**   | https://_TODO-web_.up.railway.app     |
-| **API REST**   | https://_TODO-api_.up.railway.app     |
-| **Swagger UI** | https://_TODO-api_.up.railway.app/api |
+| Servicio       | URL                                                    |
+| -------------- | ------------------------------------------------------ |
+| **Frontend**   | https://prueba-fuill-stack-production.up.railway.app   |
+| **API REST**   | https://brave-smile-production-0b49.up.railway.app     |
+| **Swagger UI** | https://brave-smile-production-0b49.up.railway.app/api |
 
 Todo en **Docker sobre Railway** (3 servicios: PostgreSQL gestionado + `api` y
 `web` construidos desde sus `Dockerfile`). La imagen de la API es
 autosuficiente: aplica migraciones y siembra datos de demo en el primer
 arranque. Guía paso a paso: **[`docs/DEPLOY.md`](docs/DEPLOY.md)**.
-
-<!--
-  Tras desplegar, reemplaza los placeholders _TODO-..._ por las URLs reales
-  (Generate Domain en cada servicio de Railway). Pasos completos en docs/DEPLOY.md.
--->
 
 ¿Sin acceso al despliegue? El proyecto corre completo en local con **un solo comando**
 (ver [Revisión rápida](#-revisión-rápida-un-solo-comando)).
