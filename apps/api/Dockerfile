@@ -58,9 +58,15 @@ COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
 COPY pnpm-workspace.yaml package.json ./
 COPY apps/api/package.json ./apps/api/
 
+# Self-bootstrapping entrypoint: migrate deploy (always) + seed (only if the
+# DB is empty) + start. Makes the image deployable as-is on Railway/any host
+# without an external command override. docker-compose.prod.yml still
+# overrides `command` for the zero-config demo (unconditional reseed).
+COPY apps/api/docker-entrypoint.sh ./apps/api/docker-entrypoint.sh
+RUN chmod +x ./apps/api/docker-entrypoint.sh
+
 EXPOSE 3001
 
-# nest build keeps the src/ tree under dist/ (the tsconfig also includes
-# prisma/), so the entrypoint is dist/src/main.js — not dist/main.js.
-# docker-compose.prod.yml overrides this to also run migrations + seed.
-CMD ["node", "apps/api/dist/src/main.js"]
+# nest build keeps the src/ tree under dist/, so the server entrypoint is
+# dist/src/main.js. The shell wrapper adds migrate + conditional seed.
+CMD ["sh", "apps/api/docker-entrypoint.sh"]

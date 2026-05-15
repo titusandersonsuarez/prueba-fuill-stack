@@ -16,24 +16,18 @@ empaquetado en **Docker**.
 
 | Servicio       | URL                                   |
 | -------------- | ------------------------------------- |
-| **Frontend**   | https://_TODO-vercel-app_.vercel.app  |
+| **Frontend**   | https://_TODO-web_.up.railway.app     |
 | **API REST**   | https://_TODO-api_.up.railway.app     |
 | **Swagger UI** | https://_TODO-api_.up.railway.app/api |
 
+Todo en **Docker sobre Railway** (3 servicios: PostgreSQL gestionado + `api` y
+`web` construidos desde sus `Dockerfile`). La imagen de la API es
+autosuficiente: aplica migraciones y siembra datos de demo en el primer
+arranque. Guía paso a paso: **[`docs/DEPLOY.md`](docs/DEPLOY.md)**.
+
 <!--
-  Reemplaza los placeholders _TODO-..._ por las URLs reales tras desplegar.
-  Infra utilizada:
-    - Frontend → Vercel        (root: apps/web · env: NEXT_PUBLIC_API_URL = URL de la API)
-    - API REST → Railway       (Dockerfile: apps/api/Dockerfile)
-    - PostgreSQL → Railway     (plugin PostgreSQL · DATABASE_URL referenciada por el servicio API)
-  Pasos resumidos del despliegue:
-    1. Railway → New Project → Deploy from GitHub repo → añadir plugin PostgreSQL.
-    2. Servicio API: variables DATABASE_URL, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET,
-       JWT_ACCESS_TTL=900s, JWT_REFRESH_TTL=7d, APP_ORIGIN=<URL de Vercel>.
-    3. Tras el primer deploy, en la shell del servicio API:
-         npx prisma migrate deploy && npx prisma db seed
-    4. Vercel → Import repo → Root Directory: apps/web →
-       env NEXT_PUBLIC_API_URL=<URL pública de la API> → Deploy.
+  Tras desplegar, reemplaza los placeholders _TODO-..._ por las URLs reales
+  (Generate Domain en cada servicio de Railway). Pasos completos en docs/DEPLOY.md.
 -->
 
 ¿Sin acceso al despliegue? El proyecto corre completo en local con **un solo comando**
