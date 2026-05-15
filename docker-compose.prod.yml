@@ -1,10 +1,18 @@
-version: '3.9'
-
-# Production stack.  Copy .env.example → .env.prod and fill in real secrets.
-# Build images:    docker compose -f docker-compose.prod.yml build
-# First-run migrations: docker compose -f docker-compose.prod.yml run --rm api \
-#                         sh -c "cd apps/api && node_modules/.bin/prisma migrate deploy"
-# Start:           docker compose -f docker-compose.prod.yml up -d
+# ─── Full stack — zero-config review/demo environment ────────────────────────
+#
+#   docker compose -f docker-compose.prod.yml up --build
+#
+# That single command builds the images, starts PostgreSQL, applies the
+# Prisma migrations, seeds demo data, and serves API + Web. No .env needed:
+# every secret has a safe default below (override via shell env for a real
+# deployment). When it's up:
+#
+#   Web:        http://localhost:3000
+#   API:        http://localhost:3001
+#   Swagger UI: http://localhost:3001/api
+#
+# Seed logins:  admin@test.com / admin123 · dr@test.com / doctor123
+#               patient@test.com / patient123   (see README for the full list)
 
 services:
   postgres:
@@ -13,7 +21,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-prescriptions_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -33,15 +41,22 @@ services:
       NODE_ENV: production
       PORT: 3001
       DATABASE_URL: >-
-        postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-prescriptions_db}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET is required}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required}
+        postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-prescriptions_db}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-demo-access-secret-change-me-min-32-chars}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-demo-refresh-secret-change-me-min-32-chars}
       JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
       APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       THROTTLE_TTL: ${THROTTLE_TTL:-60000}
       THROTTLE_LIMIT: ${THROTTLE_LIMIT:-100}
+    # Apply migrations, (re)seed demo data, then start the API. Seeding is
+    # best-effort: a failure there must not stop the server from booting.
+    command: >-
+      sh -c "cd /app/apps/api &&
+      node_modules/.bin/prisma migrate deploy &&
+      (node dist/prisma/seed.js || echo '[entrypoint] seed skipped') &&
+      node dist/src/main.js"
     ports:
       - '3001:3001'
     depends_on:
@@ -53,7 +68,8 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        # Baked into the client bundle at build time — must be reachable from the browser
+        # Baked into the client bundle at build time — must be reachable from
+        # the browser, so it points at the published API port on the host.
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
     container_name: prescriptions_web
     restart: unless-stopped

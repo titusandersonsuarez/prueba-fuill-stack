@@ -1,47 +1,124 @@
-# Prescriptions App
+# Prescriptions App — Sistema de gestión de recetas médicas
 
-Sistema de gestión de recetas médicas. Monorepo full-stack construido con NestJS + Next.js.
+Aplicación full-stack para la **emisión, consulta y consumo de recetas médicas**, con
+control de acceso por rol (administrador / médico / paciente), generación de PDF con
+código QR, panel de métricas y filtros de búsqueda en todos los listados.
+
+Monorepo construido con **NestJS** (API REST) + **Next.js** (dashboard web), tipos
+compartidos en un paquete interno, base de datos **PostgreSQL** vía **Prisma**, y todo
+empaquetado en **Docker**.
+
+---
+
+## ⚡ Revisión rápida (un solo comando)
+
+> Pensado para que quien revise el proyecto **no tenga que configurar nada**.
+> Requisito único: **Docker Desktop** instalado y corriendo.
+
+```bash
+git clone <repo-url>
+cd prueba-fuill-stack
+docker compose -f docker-compose.prod.yml up --build
+```
+
+Ese comando, sin pasos extra:
+
+1. Construye las imágenes de API y Web.
+2. Levanta PostgreSQL y espera a que esté sano.
+3. Aplica las **migraciones** de Prisma automáticamente.
+4. Carga los **datos de prueba** (usuarios + recetas de ejemplo).
+5. Sirve API y Web.
+
+No hace falta crear ningún `.env`: todos los secretos tienen un valor por defecto
+seguro para entorno de demo (se pueden sobrescribir con variables de entorno para un
+despliegue real).
+
+Cuando termine (la primera build tarda unos minutos), abre:
+
+| Servicio   | URL                       |
+| ---------- | ------------------------- |
+| **Web**    | http://localhost:3000     |
+| API REST   | http://localhost:3001     |
+| Swagger UI | http://localhost:3001/api |
+
+Para parar y limpiar todo (incluida la base de datos):
+
+```bash
+docker compose -f docker-compose.prod.yml down -v
+```
+
+### Credenciales para entrar
+
+| Email               | Contraseña   | Rol           | Qué puede ver / hacer                                                    |
+| ------------------- | ------------ | ------------- | ------------------------------------------------------------------------ |
+| `admin@test.com`    | `admin123`   | Administrador | Todo: usuarios, médicos, pacientes, todas las recetas, métricas globales |
+| `dr@test.com`       | `doctor123`  | Médico        | Sus propias recetas, crear/eliminar recetas, sus métricas                |
+| `dr2@test.com`      | `doctor123`  | Médico        | Ídem (segundo médico, para probar el aislamiento por rol)                |
+| `patient@test.com`  | `patient123` | Paciente      | Solo sus recetas, marcarlas como consumidas, su perfil                   |
+| `patient2@test.com` | `patient123` | Paciente      | Ídem                                                                     |
+| `patient3@test.com` | `patient123` | Paciente      | Ídem                                                                     |
+
+---
+
+## Qué hace la aplicación
+
+| Área              | Detalle                                                                                   |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| **Autenticación** | Login con JWT de acceso + **refresh token con rotación** y revocación por familia         |
+| **Roles**         | `admin`, `doctor`, `patient` — cada endpoint y vista respeta el rol (RBAC con guards)     |
+| **Recetas**       | Médico las crea (con varios medicamentos); paciente las consume; código único `PRESC-…`   |
+| **PDF + QR**      | Descarga de la receta en PDF generado en memoria, con QR para verificación                |
+| **Métricas**      | Dashboard de admin (totales, top médicos) y estadísticas individuales por médico          |
+| **Filtros**       | Todos los listados (recetas, pacientes, médicos, usuarios) tienen búsqueda + paginación   |
+| **Aislamiento**   | Un médico no ve recetas de otro; un paciente solo ve las suyas — verificado en el backend |
+
+### Filtros disponibles por módulo
+
+| Módulo    | Filtros (query params del API + UI con búsqueda _debounced_)           |
+| --------- | ---------------------------------------------------------------------- |
+| Recetas   | `status`, `code`, `patientId`, `authorId`, rango de fechas `from`/`to` |
+| Pacientes | `search` (nombre, apellido o email)                                    |
+| Médicos   | `search` (nombre, apellido, email, licencia) + `speciality`            |
+| Usuarios  | `search` (email o nombre del perfil) + `role`                          |
+
+---
 
 ## Stack
 
-| Capa   | Tecnología                                                      |
-| ------ | --------------------------------------------------------------- |
-| API    | NestJS 11 · Prisma 6 · PostgreSQL 16 · Passport JWT             |
-| Web    | Next.js 15 (App Router) · React 19 · Tailwind CSS 3 · Zustand 5 |
-| Shared | `packages/shared` — enums y tipos TypeScript compartidos        |
-| Tests  | Jest 30 · ts-jest · React Testing Library 16                    |
-| DevOps | pnpm 10 Workspaces · Turborepo 2 · Docker · GitHub Actions      |
+| Capa   | Tecnología                                                            |
+| ------ | --------------------------------------------------------------------- |
+| API    | NestJS 11 · Prisma 6 · PostgreSQL 16 · Passport JWT · class-validator |
+| Web    | Next.js 15 (App Router) · React 19 · Tailwind CSS 3 · Zustand 5       |
+| Shared | `packages/shared` — enums y tipos TypeScript compartidos              |
+| Tests  | Jest 30 · ts-jest · React Testing Library 16                          |
+| DevOps | pnpm 10 Workspaces · Turborepo 2 · Docker · GitHub Actions            |
 
-## Requisitos previos
+---
 
-- Node.js ≥ 22
-- pnpm ≥ 10 (`npm install -g pnpm`)
-- Docker + Docker Compose (para PostgreSQL local)
+## Desarrollo local (sin Docker para la app)
 
-## Setup local
+Para trabajar sobre el código con hot-reload. Aquí Docker solo se usa para la base de
+datos.
+
+**Requisitos:** Node.js ≥ 22 · pnpm ≥ 10 (`npm install -g pnpm`) · Docker.
 
 ```bash
-# 1. Clonar e instalar dependencias
-git clone <repo-url>
-cd prescriptions-app
+# 1. Instalar dependencias
 pnpm install
 
-# 2. Variables de entorno
+# 2. Variables de entorno (funciona tal cual para dev con la DB en el puerto 5433)
 cp .env.example .env
-# El fichero funciona sin cambios para desarrollo con Docker en puerto 5433
 
-# 3. Arrancar PostgreSQL
-docker compose up -d postgres
+# 3. Solo la base de datos (PostgreSQL + Adminer)
+docker compose up -d
 
-# 4. Migraciones y datos de prueba
+# 4. Migraciones + datos de prueba
 pnpm --filter @prescriptions/api db:migrate
 pnpm --filter @prescriptions/api db:seed
 
-# 5. Arrancar en modo desarrollo (API + Web en paralelo)
+# 5. API + Web en watch mode, en paralelo
 pnpm dev
 ```
-
-## URLs en desarrollo
 
 | Servicio     | URL                       |
 | ------------ | ------------------------- |
@@ -50,40 +127,49 @@ pnpm dev
 | Swagger UI   | http://localhost:3001/api |
 | Adminer (DB) | http://localhost:8080     |
 
-## Credenciales del seed
+> Los dos ficheros compose tienen propósitos distintos:
+>
+> - **`docker-compose.yml`** → solo PostgreSQL + Adminer (para `pnpm dev`).
+> - **`docker-compose.prod.yml`** → stack completo (postgres + api + web), el de la revisión rápida.
 
-| Email             | Contraseña | Rol           |
-| ----------------- | ---------- | ------------- |
-| admin@test.com    | admin123   | Administrador |
-| dr@test.com       | doctor123  | Médico        |
-| dr2@test.com      | doctor123  | Médico        |
-| patient@test.com  | patient123 | Paciente      |
-| patient2@test.com | patient123 | Paciente      |
-| patient3@test.com | patient123 | Paciente      |
+---
 
-## Comandos principales
+## Comandos útiles
 
 ```bash
 # Desarrollo
 pnpm dev                                     # API + Web en watch mode
 
 # Tests
-pnpm --filter @prescriptions/api test        # Unit tests NestJS
-pnpm --filter @prescriptions/web test        # Unit tests React
-pnpm --filter @prescriptions/api test:e2e    # E2E tests (requiere DB con seed)
+pnpm --filter @prescriptions/api test        # Unit tests NestJS  (10)
+pnpm --filter @prescriptions/web test        # Unit tests React   (47)
+pnpm --filter @prescriptions/api test:e2e    # E2E (requiere DB con seed)
 
 # Build
 pnpm build                                   # shared → api → web
 
 # Base de datos
-pnpm --filter @prescriptions/api db:migrate  # Crear/aplicar migración en dev
+pnpm --filter @prescriptions/api db:migrate  # Crear/aplicar migración (dev)
 pnpm --filter @prescriptions/api db:seed     # Poblar con datos de prueba
-pnpm --filter @prescriptions/api db:studio   # Abrir Prisma Studio
+pnpm --filter @prescriptions/api db:studio   # Prisma Studio (GUI de la DB)
 ```
+
+---
+
+## Calidad de código (husky)
+
+El repo usa **husky + lint-staged**: antes de cada commit corre ESLint y Prettier
+sobre los ficheros staged. Es opcional y **solo afecta a `git commit`** — quien solo
+ejecuta o revisa el proyecto no lo necesita ni lo nota. Se instala solo con
+`pnpm install` (script `prepare`).
+
+---
 
 ## Variables de entorno
 
-Copia `.env.example` y ajusta los valores. Variables **requeridas en producción**:
+Para la revisión con Docker **no hace falta tocar nada** (todo tiene defaults en
+`docker-compose.prod.yml`). Para desarrollo local copia `.env.example` → `.env`.
+Variables que conviene definir en un despliegue real:
 
 | Variable             | Descripción                         |
 | -------------------- | ----------------------------------- |
@@ -92,66 +178,49 @@ Copia `.env.example` y ajusta los valores. Variables **requeridas en producción
 | `JWT_REFRESH_SECRET` | Secreto JWT de refresh (≥ 32 chars) |
 | `POSTGRES_PASSWORD`  | Contraseña de PostgreSQL            |
 
-## Docker — stack completo
+> `NEXT_PUBLIC_API_URL` se incrusta en el bundle del cliente en build time. Si la URL
+> del API cambia entre entornos, hay que reconstruir la imagen web.
 
-```bash
-# Copiar y completar variables de producción
-cp .env.example .env.prod
-# Editar .env.prod con secretos reales
-
-# Construir imágenes
-docker compose -f docker-compose.prod.yml --env-file .env.prod build
-
-# Primera ejecución: aplicar migraciones
-docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm api \
-  sh -c "cd apps/api && node_modules/.bin/prisma migrate deploy"
-
-# Arrancar todos los servicios
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
-```
-
-> **Nota:** `NEXT_PUBLIC_API_URL` se incrusta en el bundle del cliente en build time.
-> Si la URL del API cambia entre entornos, hay que reconstruir la imagen web.
+---
 
 ## Estructura del proyecto
 
 ```
-prescriptions-app/
+prueba-fuill-stack/
 ├── apps/
 │   ├── api/                  # NestJS API — puerto 3001
 │   │   ├── src/
 │   │   │   ├── auth/         # JWT + refresh token rotation (family revocation)
-│   │   │   ├── users/        # CRUD usuarios (solo admin)
-│   │   │   ├── doctors/      # Perfiles médicos + /me
-│   │   │   ├── patients/     # Perfiles pacientes + /me
-│   │   │   ├── prescriptions/# Core: crear · consumir · PDF · QR
+│   │   │   ├── users/        # CRUD usuarios (solo admin) + filtros
+│   │   │   ├── doctors/      # Perfiles médicos + /me + filtros
+│   │   │   ├── patients/     # Perfiles pacientes + /me + filtros
+│   │   │   ├── prescriptions/# Core: crear · consumir · PDF · QR · filtros
 │   │   │   ├── metrics/      # Dashboard admin + estadísticas médico
 │   │   │   └── pdf/          # Generación PDF en memoria (pdfkit + qrcode)
 │   │   └── prisma/           # Schema · migraciones · seed
 │   └── web/                  # Next.js — puerto 3000
 │       └── src/
-│           ├── app/
-│           │   ├── (auth)/   # /login — rutas públicas
-│           │   └── (dashboard)/ # /prescriptions · /patients · /metrics · /users · /profile
+│           ├── app/          # App Router: (auth) público · dashboard protegido
 │           ├── components/   # UI atómica + componentes de dominio + layout
-│           ├── services/     # Clientes REST tipados (auth, prescriptions, patients…)
-│           ├── store/        # Zustand — auth state (user persistido, token en cookie)
+│           ├── services/     # Clientes REST tipados por módulo
+│           ├── store/        # Zustand — auth (user persistido, token en cookie)
 │           └── hooks/        # useAuth
 ├── packages/
 │   └── shared/               # Role · PrescriptionStatus · PaginatedResponse · JwtPayload
 ├── docs/
-│   ├── ARCHITECTURE.md       # Diagramas y capas
-│   ├── DECISIONS.md          # ADRs (Architecture Decision Records)
+│   ├── ARCHITECTURE.md       # Diagramas de sistema, flujos y esquema de BD
+│   ├── DECISIONS.md          # ADRs: por qué se eligió cada tecnología
 │   └── PROGRESS.md           # Log de progreso por fase
 ├── .github/workflows/ci.yml  # CI: lint + tests + build
-├── .dockerignore
-├── docker-compose.yml        # Desarrollo: solo PostgreSQL + Adminer
-└── docker-compose.prod.yml   # Producción: postgres + api + web
+├── docker-compose.yml        # Dev: solo PostgreSQL + Adminer
+└── docker-compose.prod.yml   # Stack completo (revisión rápida)
 ```
+
+---
 
 ## CI
 
-El workflow `.github/workflows/ci.yml` corre en cada push/PR a `main`:
+`.github/workflows/ci.yml` corre en cada push/PR a `main`:
 
 | Job     | Pasos                                      |
 | ------- | ------------------------------------------ |
@@ -159,11 +228,13 @@ El workflow `.github/workflows/ci.yml` corre en cada push/PR a `main`:
 | `test`  | Unit tests API · Unit tests Web            |
 | `build` | Build shared → API → Web                   |
 
-Los jobs `test` y `lint` corren en paralelo; `build` requiere que ambos pasen.
+`test` y `lint` corren en paralelo; `build` requiere que ambos pasen.
+
+---
 
 ## Documentación adicional
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — Diagramas de sistema, flujos y esquema de BD
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — ADRs: por qué se eligió cada tecnología
-- [`docs/PROGRESS.md`](docs/PROGRESS.md) — Log de las 14 fases del proyecto
-- Swagger UI disponible en `http://localhost:3001/api` cuando el servidor está corriendo
+- [`docs/PROGRESS.md`](docs/PROGRESS.md) — Log de las fases del proyecto
+- **Swagger UI** en `http://localhost:3001/api` con el servidor corriendo

@@ -1,0 +1,3 @@
+# Next.js static assets directory.
+# Kept in git so the production Docker build's `COPY apps/web/public` step
+# succeeds even when there are no static files yet.

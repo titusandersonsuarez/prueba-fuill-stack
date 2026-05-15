@@ -48,9 +48,11 @@ COPY packages/shared/package.json ./packages/shared/
 # Compiled API output
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 
-# Prisma schema (needed for `prisma migrate deploy`) + generated client
+# Prisma schema + migrations (needed for `prisma migrate deploy` and the seed).
+# The generated Prisma client + query engine are NOT at node_modules/.prisma
+# with pnpm — they live in the .pnpm store, already included by the full
+# node_modules copy above, so no extra copy is needed here.
 COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Workspace manifests (needed by Node module resolution)
 COPY pnpm-workspace.yaml package.json ./
@@ -58,6 +60,7 @@ COPY apps/api/package.json ./apps/api/
 
 EXPOSE 3001
 
-# To run migrations before startup:
-#   docker compose run --rm api sh -c "cd apps/api && node_modules/.bin/prisma migrate deploy"
-CMD ["node", "apps/api/dist/main.js"]
+# nest build keeps the src/ tree under dist/ (the tsconfig also includes
+# prisma/), so the entrypoint is dist/src/main.js — not dist/main.js.
+# docker-compose.prod.yml overrides this to also run migrations + seed.
+CMD ["node", "apps/api/dist/src/main.js"]
