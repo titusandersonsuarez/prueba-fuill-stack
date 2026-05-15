@@ -7,10 +7,13 @@ node_modules
 **/.next
 !**/.next/cache
 
-# Local environment files with secrets
-.env
-.env.local
-.env.*.local
+# Local environment files with secrets — including nested ones like
+# apps/api/.env. A bare `.env` pattern does NOT match nested paths in
+# .dockerignore, so without `**/` the local secrets leak into the build
+# context and a local DATABASE_URL can shadow the real one.
+**/.env
+**/.env.local
+**/.env.*.local
 # Keep .env.example — no secrets, just documentation
 
 # Version control
