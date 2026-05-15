@@ -178,7 +178,7 @@ Cada fase debe terminar con: ✅ código funcionando · ✅ commit · ✅ entrad
 - Crear migración inicial: `prisma migrate dev --name init`.
 - Implementar `prisma/seed.ts` con:
   - 1 admin (`admin@test.com` / `admin123`)
-  - 1 médico (`dr@test.com` / `dr123`)
+  - 1 médico (`dr@test.com` / `doctor123`)
   - 1 paciente (`patient@test.com` / `patient123`)
   - 2-3 pacientes adicionales
   - 8-10 prescripciones (mix pending/consumed, con 2-4 items cada una)

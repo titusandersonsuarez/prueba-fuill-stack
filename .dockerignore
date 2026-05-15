@@ -1,0 +1,45 @@
+# Dependencies (will be re-installed inside the image)
+node_modules
+**/node_modules
+
+# Build artifacts (will be generated inside the image)
+**/dist
+**/.next
+!**/.next/cache
+
+# Local environment files with secrets
+.env
+.env.local
+.env.*.local
+# Keep .env.example — no secrets, just documentation
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Editor & OS
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Test coverage
+**/coverage
+
+# CI / GitHub
+.github
+
+# Turbo cache
+.turbo
+
+# Misc
+*.md
+docs/

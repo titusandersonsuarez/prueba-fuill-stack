@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10'
+
+jobs:
+  # ── Lint & type-check ────────────────────────────────────────────────────────
+  lint:
+    name: Lint & TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        working-directory: apps/api
+        run: npx prisma generate
+
+      - name: TypeScript — API
+        working-directory: apps/api
+        run: npx tsc --noEmit
+
+      - name: TypeScript — Web
+        working-directory: apps/web
+        run: npx tsc --noEmit
+
+      - name: Lint — API
+        run: pnpm --filter @prescriptions/api lint
+
+      - name: Lint — Web
+        run: pnpm --filter @prescriptions/web lint
+
+  # ── Unit tests ───────────────────────────────────────────────────────────────
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        working-directory: apps/api
+        run: npx prisma generate
+
+      - name: Test — API (unit)
+        run: pnpm --filter @prescriptions/api test
+
+      - name: Test — Web
+        run: pnpm --filter @prescriptions/web test
+
+  # ── Build verification ───────────────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build — shared
+        run: pnpm --filter @prescriptions/shared build
+
+      - name: Generate Prisma client
+        working-directory: apps/api
+        run: npx prisma generate
+
+      - name: Build — API
+        run: pnpm --filter @prescriptions/api build
+
+      - name: Build — Web
+        run: pnpm --filter @prescriptions/web build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001
