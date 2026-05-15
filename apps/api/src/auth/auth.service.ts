@@ -127,7 +127,11 @@ export class AuthService {
     } else {
       await this.revokeAllUserSessions(userId);
     }
-    res.clearCookie(REFRESH_COOKIE, { path: '/' });
+    res.clearCookie(REFRESH_COOKIE, {
+      path: '/',
+      secure: this.isProd,
+      sameSite: this.isProd ? 'none' : 'strict',
+    });
   }
 
   async hashPassword(password: string): Promise<string> {
@@ -179,12 +183,20 @@ export class AuthService {
     return createHash('sha256').update(token).digest('hex');
   }
 
+  private get isProd(): boolean {
+    return this.config.get<string>('NODE_ENV') === 'production';
+  }
+
   private setRefreshCookie(res: Response, token: string): void {
     const maxAge = this.parseExpiryMs(this.config.get<string>('JWT_REFRESH_EXPIRES_IN', '7d'));
     res.cookie(REFRESH_COOKIE, token, {
       httpOnly: true,
-      secure: this.config.get<string>('NODE_ENV') === 'production',
-      sameSite: 'strict',
+      // Web and API live on different domains in prod, so the refresh
+      // request is cross-site: the browser only sends the cookie with
+      // SameSite=None; Secure. Dev is same-site localhost over http,
+      // where None+Secure would be rejected — keep strict there.
+      secure: this.isProd,
+      sameSite: this.isProd ? 'none' : 'strict',
       maxAge,
       path: '/',
     });

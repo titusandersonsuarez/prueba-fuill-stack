@@ -211,7 +211,11 @@ describe('AuthService', () => {
       expect(mockPrisma.refreshToken.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: { family: 'fam-1', revokedAt: null } }),
       );
-      expect(mockResponse.clearCookie).toHaveBeenCalledWith('refresh_token', { path: '/' });
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith('refresh_token', {
+        path: '/',
+        secure: false,
+        sameSite: 'strict',
+      });
     });
 
     it('revoca todas las sesiones si el token es inválido', async () => {
