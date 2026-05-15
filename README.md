@@ -18,7 +18,6 @@ empaquetado en **Docker**.
 | -------------- | ------------------------------------------------------ |
 | **Frontend**   | https://prueba-fuill-stack-production.up.railway.app   |
 | **API REST**   | https://brave-smile-production-0b49.up.railway.app     |
-| **Swagger UI** | https://brave-smile-production-0b49.up.railway.app/api |
 
 Todo en **Docker sobre Railway** (3 servicios: PostgreSQL gestionado + `api` y
 `web` construidos desde sus `Dockerfile`). La imagen de la API es
