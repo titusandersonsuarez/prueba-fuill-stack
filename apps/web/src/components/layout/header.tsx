@@ -10,7 +10,11 @@ const ROLE_LABEL: Record<string, string> = {
   patient: 'Paciente',
 };
 
-export function Header() {
+interface HeaderProps {
+  onToggleSidebar: () => void;
+}
+
+export function Header({ onToggleSidebar }: HeaderProps) {
   const router = useRouter();
   const { user, clearAuth } = useAuth();
 
@@ -26,8 +30,24 @@ export function Header() {
   }
 
   return (
-    <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
-      <div />
+    <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-4">
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:bg-slate-50 sm:hidden"
+        >
+          <span className="sr-only">Abrir menú</span>
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
+      </div>
 
       <div className="flex items-center gap-4">
         {user && (

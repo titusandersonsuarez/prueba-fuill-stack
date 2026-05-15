@@ -103,53 +103,74 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
 
   const visibleItems = NAV_ITEMS.filter((item) => !user || item.roles.includes(user.role));
 
   return (
-    <aside className="w-60 shrink-0 bg-white border-r border-slate-200 flex flex-col">
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-100">
-        <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-          <ClipboardIcon />
-        </div>
-        <span className="font-semibold text-slate-800 text-sm">Prescriptions</span>
-      </div>
+    <>
+      <div
+        className={cn(
+          'fixed inset-0 z-30 bg-slate-900/50 transition-opacity sm:hidden',
+          open ? 'opacity-100 visible' : 'opacity-0 invisible',
+        )}
+        onClick={onClose}
+      />
 
-      {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {visibleItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-primary-50 text-primary-700'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
-              )}
-            >
-              <span className={cn(isActive ? 'text-primary-600' : 'text-slate-400')}>
-                {item.icon}
-              </span>
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Footer */}
-      {user && (
-        <div className="px-4 py-3 border-t border-slate-100">
-          <p className="text-xs text-slate-500 truncate">{user.email}</p>
-          <p className="text-xs font-medium text-slate-700 capitalize">{user.role}</p>
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-40 w-60 shrink-0 bg-white border-r border-slate-200 flex flex-col transform transition-transform duration-200 sm:relative sm:translate-x-0',
+          open ? 'translate-x-0' : '-translate-x-full',
+        )}
+      >
+        {/* Logo */}
+        <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-100">
+          <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+            <ClipboardIcon />
+          </div>
+          <span className="font-semibold text-slate-800 text-sm">Prescriptions</span>
         </div>
-      )}
-    </aside>
+
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {visibleItems.map((item) => {
+            const isActive = pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onClose}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
+                )}
+              >
+                <span className={cn(isActive ? 'text-primary-600' : 'text-slate-400')}>
+                  {item.icon}
+                </span>
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Footer */}
+        {user && (
+          <div className="px-4 py-3 border-t border-slate-100">
+            <p className="text-xs text-slate-500 truncate">{user.email}</p>
+            <p className="text-xs font-medium text-slate-700 capitalize">{user.role}</p>
+          </div>
+        )}
+      </aside>
+    </>
   );
 }
