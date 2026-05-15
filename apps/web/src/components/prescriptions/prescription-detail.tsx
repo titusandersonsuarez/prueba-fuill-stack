@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { StatusBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ApiError } from '@/lib/api-client';
@@ -23,8 +24,9 @@ export function PrescriptionDetail({ prescription, userRole, onUpdated }: Prescr
     try {
       const updated = await prescriptionsService.consume(prescription.id);
       onUpdated(updated);
+      toast.success('Receta marcada como consumida');
     } catch (err) {
-      alert(err instanceof ApiError ? err.body.message : 'Error al consumir la receta');
+      toast.error(err instanceof ApiError ? err.body.message : 'Error al consumir la receta');
     }
   }
 
@@ -33,9 +35,10 @@ export function PrescriptionDetail({ prescription, userRole, onUpdated }: Prescr
       return;
     try {
       await prescriptionsService.remove(prescription.id);
+      toast.success(`Receta ${prescription.code} eliminada`);
       router.push('/dashboard/prescriptions');
     } catch (err) {
-      alert(err instanceof ApiError ? err.body.message : 'Error al eliminar');
+      toast.error(err instanceof ApiError ? err.body.message : 'Error al eliminar');
     }
   }
 
@@ -43,7 +46,7 @@ export function PrescriptionDetail({ prescription, userRole, onUpdated }: Prescr
     try {
       await prescriptionsService.downloadPdf(prescription.id, prescription.code);
     } catch {
-      alert('Error al generar el PDF');
+      toast.error('Error al generar el PDF');
     }
   }
 

@@ -19,6 +19,7 @@ export class MetricsService {
       consumed,
       last7Days,
       last30Days,
+      last30Rows,
       topDoctorsRaw,
     ] = await Promise.all([
       this.prisma.user.count({ where: { role: 'admin' } }),
@@ -29,6 +30,10 @@ export class MetricsService {
       this.prisma.prescription.count({ where: { status: 'consumed' } }),
       this.prisma.prescription.count({ where: { createdAt: { gte: last7 } } }),
       this.prisma.prescription.count({ where: { createdAt: { gte: last30 } } }),
+      this.prisma.prescription.findMany({
+        where: { createdAt: { gte: last30 } },
+        select: { createdAt: true },
+      }),
       this.prisma.prescription.groupBy({
         by: ['authorId'],
         _count: { id: true },
@@ -36,6 +41,20 @@ export class MetricsService {
         take: 5,
       }),
     ]);
+
+    // Serie diaria de los últimos 30 días (zero-filled para una línea continua).
+    // La clave es la fecha en UTC (YYYY-MM-DD) para que el bucketing sea determinista.
+    const counts = new Map<string, number>();
+    for (const row of last30Rows) {
+      const key = row.createdAt.toISOString().slice(0, 10);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    const byDay: { date: string; count: number }[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 86_400_000);
+      const key = d.toISOString().slice(0, 10);
+      byDay.push({ date: key, count: counts.get(key) ?? 0 });
+    }
 
     // Enrich top doctors with names
     const authorIds = topDoctorsRaw.map((r) => r.authorId);
@@ -73,6 +92,7 @@ export class MetricsService {
         last7Days,
         last30Days,
       },
+      byDay,
       topDoctors,
     };
   }

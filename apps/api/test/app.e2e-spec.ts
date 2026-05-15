@@ -195,9 +195,9 @@ describe('Prescriptions API (e2e)', () => {
         .set('Authorization', `Bearer ${doctorToken}`)
         .expect(200);
 
-      const body = res.body as { data: { id: string }[]; total: number };
+      const body = res.body as { data: { id: string }[]; meta: { total: number } };
       expect(body).toHaveProperty('data');
-      expect(body).toHaveProperty('total');
+      expect(body.meta).toHaveProperty('total');
       const found = body.data.find((p) => p.id === createdPrescriptionId);
       expect(found).toBeDefined();
     });
@@ -349,6 +349,12 @@ describe('Prescriptions API (e2e)', () => {
       expect(users).toHaveProperty('total');
       const prescriptions = body.prescriptions as Record<string, unknown>;
       expect(prescriptions).toHaveProperty('consumptionRate');
+      // Serie diaria: 30 días zero-filled, ordenada y con forma { date, count }
+      expect(Array.isArray(body.byDay)).toBe(true);
+      const byDay = body.byDay as { date: string; count: number }[];
+      expect(byDay).toHaveLength(30);
+      expect(byDay[0]).toHaveProperty('date');
+      expect(byDay[0]).toHaveProperty('count');
     });
 
     it('GET /metrics/my-stats — 200 devuelve stats del médico', async () => {

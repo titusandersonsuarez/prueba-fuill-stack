@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { StatCard } from '@/components/metrics/stat-card';
 import { TopDoctorsList } from '@/components/metrics/top-doctors-list';
 import { DoctorStatsView } from '@/components/metrics/doctor-stats';
+import { StatusChart } from '@/components/metrics/status-chart';
+import { DailyChart } from '@/components/metrics/daily-chart';
 import { RoleGuard } from '@/components/auth/role-guard';
 import { PageSpinner } from '@/components/ui/spinner';
 import { useAuth } from '@/hooks/use-auth';
@@ -81,6 +83,21 @@ function AdminDashboard() {
             sub="nuevas recetas"
             color="slate"
           />
+        </div>
+      </section>
+
+      {/* Gráficos */}
+      <section className="grid lg:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-5">
+          <h2 className="font-semibold text-slate-800 mb-2">Recetas por estado</h2>
+          <StatusChart
+            pending={summary.prescriptions.pending}
+            consumed={summary.prescriptions.consumed}
+          />
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-5 lg:col-span-2">
+          <h2 className="font-semibold text-slate-800 mb-2">Recetas por día (últimos 30 días)</h2>
+          <DailyChart data={summary.byDay} />
         </div>
       </section>
 

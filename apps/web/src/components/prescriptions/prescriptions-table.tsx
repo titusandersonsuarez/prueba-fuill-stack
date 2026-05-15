@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { StatusBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -35,8 +36,9 @@ export function PrescriptionsTable({
     try {
       await prescriptionsService.remove(prescription.id);
       onDeleted(prescription.id);
+      toast.success(`Receta ${prescription.code} eliminada`);
     } catch (err) {
-      alert(err instanceof ApiError ? err.body.message : 'Error al eliminar');
+      toast.error(err instanceof ApiError ? err.body.message : 'Error al eliminar');
     }
   }
 
@@ -44,7 +46,7 @@ export function PrescriptionsTable({
     try {
       await prescriptionsService.downloadPdf(prescription.id, prescription.code);
     } catch {
-      alert('Error al descargar el PDF');
+      toast.error('Error al descargar el PDF');
     }
   }
 

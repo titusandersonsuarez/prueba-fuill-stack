@@ -4,6 +4,7 @@ export interface MetricsSummary {
   users: { total: number; admin: number; doctors: number; patients: number };
   prescriptions: { total: number; pending: number; consumed: number; consumptionRate: number };
   activity: { last7Days: number; last30Days: number };
+  byDay: { date: string; count: number }[];
   topDoctors: { doctorId: string; name: string; speciality: string; prescriptionCount: number }[];
 }
 

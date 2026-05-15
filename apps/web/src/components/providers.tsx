@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { Toaster } from 'sonner';
 import { useAuthStore } from '@/store/auth.store';
 import { getAccessToken, setAccessToken } from '@/lib/api-client';
 
@@ -43,5 +44,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
     // Solo al montar: sincroniza la sesión una vez al cargar la app.
   }, []);
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <Toaster position="top-right" richColors closeButton />
+    </>
+  );
 }

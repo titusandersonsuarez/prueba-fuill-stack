@@ -16,7 +16,8 @@ export class MetricsController {
   @ApiOperation({ summary: 'Métricas globales del sistema (admin)' })
   @ApiResponse({
     status: 200,
-    description: 'Resumen: usuarios, prescripciones, top médicos, actividad reciente',
+    description:
+      'Resumen: usuarios, prescripciones, top médicos, actividad reciente y serie diaria (byDay, últimos 30 días)',
   })
   getSummary() {
     return this.metricsService.getSummary();

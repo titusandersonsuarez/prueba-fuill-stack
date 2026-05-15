@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import {
   prescriptionsService,
   type CreatePrescriptionPayload,
@@ -86,9 +87,12 @@ export function CreatePrescriptionForm() {
     setLoading(true);
     try {
       const created = await prescriptionsService.create(payload);
+      toast.success(`Receta ${created.code} creada`);
       router.push(`/dashboard/prescriptions/${created.id}`);
     } catch (err) {
-      setError(err instanceof ApiError ? err.body.message : 'Error al crear la receta');
+      const message = err instanceof ApiError ? err.body.message : 'Error al crear la receta';
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

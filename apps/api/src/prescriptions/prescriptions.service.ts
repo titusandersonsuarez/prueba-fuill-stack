@@ -1,5 +1,5 @@
 import {
-  BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -154,7 +154,7 @@ export class PrescriptionsService {
     }
 
     if (prescription.status !== PrescriptionStatus.PENDING) {
-      throw new BadRequestException('La prescripción ya fue consumida');
+      throw new ConflictException('La prescripción ya fue consumida');
     }
 
     return this.prisma.prescription.update({

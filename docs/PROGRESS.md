@@ -193,6 +193,45 @@
 - [x] **FASE 12** — Testing Frontend Mínimo
 - [x] **FASE 13** — DevOps: Docker, CI y Deploy
 - [x] **FASE 14** — Documentación Final
+- [x] **FASE 15** — Serie diaria de métricas + Gráficos + Toasts
+
+---
+
+## FASE 15 — Serie diaria de métricas + Gráficos + Toasts
+
+**Fecha:** 2026-05-15
+**Estado:** ✅ Completada
+
+### Qué se hizo
+
+**Backend:**
+
+- `MetricsService.getSummary()` ahora devuelve `byDay`: serie de los **últimos 30 días**, _zero-filled_, con forma `{ date: 'YYYY-MM-DD', count }[]` (coincide con el contrato de la prueba). Se obtiene con un `findMany({ select: { createdAt } })` acotado a 30 días y bucketing en memoria por fecha UTC (determinista, sin SQL crudo)
+- Test E2E de métricas extendido: verifica `byDay` array de longitud 30 con forma `{ date, count }`
+- Descripción Swagger del endpoint `/metrics` actualizada
+
+**Frontend:**
+
+- Añadidas dependencias `recharts` y `sonner`
+- `StatusChart` (donut recharts) — recetas pendientes vs consumidas con %
+- `DailyChart` (área recharts) — serie de recetas por día (últimos 30), eje X con etiquetas DD/MM cada 5 días
+- Dashboard admin: nueva sección de gráficos (estado + serie diaria) antes de Top médicos
+- `<Toaster />` (sonner) montado en `Providers`; toasts conectados a: crear receta, consumir, eliminar (tabla + detalle) y errores de PDF — reemplazan los `alert()` nativos
+- `MetricsSummary` (servicio web) ampliado con `byDay`
+
+**Fixes de tests E2E preexistentes (detectados al ejecutar la suite completa con DB):**
+
+- **Bug de contrato**: `consume` sobre una receta ya consumida lanzaba `BadRequestException` (400). El `@ApiResponse` del controller y la tabla de errores de la prueba especifican **409 Conflict** (conflicto de estado) → cambiado a `ConflictException`
+- **Bug del test**: `GET /prescriptions` asertaba `body.total` plano, pero la API devuelve `{ data, meta: { total } }` (contrato `PaginatedResponse` usado en todo el proyecto) → corregido a `body.meta.total`
+- Resultado: **E2E 22/22** (antes 20/22)
+
+**README**: añadida sección _Despliegue en producción_ con tabla de URLs (Frontend/API/Swagger) y guía de despliegue (Railway API+DB, Vercel front) en comentario
+
+### Decisiones tomadas
+
+- **Bucketing en memoria vs SQL crudo**: 30 días de recetas es un volumen trivial; `findMany` + `Map` por fecha UTC es determinista, testeable y portable entre motores, sin riesgo de bugs de timezone de `date_trunc`
+- **`byDay` añadido sin romper el contrato existente**: la respuesta de `/metrics` mantiene `users/prescriptions/activity/topDoctors` (de los que dependen E2E y el front) y solo **suma** `byDay` — cero regresiones
+- **Toasts reemplazan `alert()`**: feedback no bloqueante y consistente (sonner `richColors`), requisito explícito de UX/UI de la prueba
 
 ---
 
